@@ -32,21 +32,27 @@
 
 <p>Nodel is an open source digital media control system built on Java and Python.</p>
 
-<p>It uses a series of nodes that perform "actions" or respond to "events" to control various devices on a network, allowing quick and easy management of digital media devices.</p>
+<p>It uses a series of nodes that perform "actions" or respond to "signals" to control various devices on a network, allowing quick and easy management of digital media devices.</p>
 
 <p>Nodel is typically used to control digital media in galleries, museums, corporate meeting rooms and digital signage.</p>
 
-<p>In short, Nodel can manage any device that resides on a network.</p>
+<p>In short, Nodel can manage any programmable device across a wide range of platforms.</p>
 
-<hr><p><strong>Why Nodel?</strong></p>
+<hr>
+
+<p><strong>Why Nodel?</strong></p>
 
 <ul>
 <li>It is simple to deploy, operate and maintain</li>
 <li>It runs on any operating system</li>
 <li>It runs on any browser including mobile devices</li>
 <li>Best of all, it is open source and free</li>
-</ul><hr><h2>
-<a name="more-info" class="anchor" href="#more-info"><span class="octicon octicon-link"></span></a>More info</h2>
+</ul>
+
+<hr>
+
+<h2>
+<a id="more-info" class="anchor" href="#more-info" aria-hidden="true"><span class="octicon octicon-link"></span></a>More info</h2>
 
 <p>Nodel is comprised of two parts – the platform and recipes.</p>
 
@@ -58,7 +64,9 @@
 <li>It is one of the most portable and ubiquitous managed execution environments in the industry, running 3 billion devices worldwide</li>
 <li>It allows large numbers of nodes to be efficiently hosted with the smallest footprint</li>
 <li>It is a very mature and robust ecosystem</li>
-</ul><p><strong>Recipes</strong> are scripted in Python and are programmed to perform tasks, which might involve switching on a projector or playing a certain audio or video clip.</p>
+</ul>
+
+<p><strong>Recipes</strong> are scripted in Python and are programmed to perform tasks, which might involve switching on a projector or playing a certain audio or video clip.</p>
 
 <p>Why Python?</p>
 
@@ -66,10 +74,14 @@
 <li>It is equally ubiquitous in the industry with readily accessible documentation, libraries and source code</li>
 <li>It excels as a scripting environment both for heavy and lightweight tasks</li>
 <li>Short, succinct and neat code makes scripting a breeze</li>
-</ul><p>The simple high-level nature of the Nodel protocol means alternative languages and environments can easily participate in the Nodel network as long as they come with a minimal set of networking functions.</p>
+</ul>
 
-<hr><h3>
-<a name="what-is-a-node" class="anchor" href="#what-is-a-node"><span class="octicon octicon-link"></span></a>What is a node?</h3>
+<p>The simple high-level nature of the Nodel protocol means alternative languages and environments can easily participate in the Nodel network as long as they come with a minimal set of networking functions.</p>
+
+<hr>
+
+<h3>
+<a id="what-is-a-node" class="anchor" href="#what-is-a-node" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is a node?</h3>
 
 <p>A node is a self-managed, self-announcing, self-describing member of the subscription-based event-network.</p>
 
@@ -79,33 +91,45 @@
 <li>A physical device</li>
 <li>A virtual software component on the network</li>
 <li>Sub-components</li>
-</ul><p>Each node features:</p>
+</ul>
+
+<p>Each node features:</p>
 
 <ul>
 <li>A simple high-level addressing scheme</li>
 <li>A simple messaging protocol using short, well defined, human-friendly message “packets”</li>
-<li>A means to fully query its behaviour points – i.e. actions and events</li>
+<li>A means to fully query its behaviour points – i.e. actions and signals</li>
 <li>Automatic management of connections between nodes</li>
 <li>A native TCP terminal-like interface for simple low-latency programmatic control</li>
 <li>An HTTP/HTML interface for high-level as well as simple programmatic control</li>
-</ul><p>Nodes communicate with each other using a simple, open, language independent, text-based, human readable protocol written in <a href="http://en.wikipedia.org/wiki/JSON">JSON</a> (JavaScript Object Notation) using the principles of <a href="https://en.wikipedia.org/wiki/Representational_state_transfer">REST</a> (REpresentational State Transfer). Being text-based and human readable, commonly available tools such as Telnet and Notepad can be used to test and diagnose problems on a given network.</p>
+</ul>
 
-<hr><h3>
-<a name="specifications" class="anchor" href="#specifications"><span class="octicon octicon-link"></span></a>Specifications</h3>
+<p>Nodes communicate with each other using a simple, open, language independent, text-based, human readable protocol written in <a href="http://en.wikipedia.org/wiki/JSON">JSON</a> (JavaScript Object Notation) using the principles of <a href="https://en.wikipedia.org/wiki/Representational_state_transfer">REST</a> (REpresentational State Transfer). Being text-based and human readable, commonly available tools such as Telnet and Notepad can be used to test and diagnose problems on a given network.</p>
+
+<hr>
+
+<h3>
+<a id="specifications" class="anchor" href="#specifications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Specifications</h3>
 
 <p>A node can run on any hardware which runs the <a href="http://en.wikipedia.org/wiki/Java_virtual_machine">Java Virtual Machine</a>, which includes OS X, Windows and Linux based devices. As such, no proprietary hardware is required to install and run the system. This requires no complex and expensive infrastructure or servers to operate and allows a wide range of devices such as the cost-effective Raspberry Pi to be used in a control system design.</p>
 
 <p>The platform-independent nature of Nodel also allows it to easily scale to suit your environment. Your organisation is not limited in the choice of hardware or software and the simplicity of the Nodel architecture makes it the ideal choice as a control system.</p>
 
-<hr><h3>
-<a name="system-requirements" class="anchor" href="#system-requirements"><span class="octicon octicon-link"></span></a>System requirements</h3>
+<hr>
+
+<h3>
+<a id="system-requirements" class="anchor" href="#system-requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>System requirements</h3>
 
 <ul>
 <li>Any operating system capable of hosting the Java 7 Runtime Environment – including OS X, Windows or Linux</li>
 <li>A current web browser</li>
 <li>Made for mobile</li>
-</ul><hr><h1>
-<a name="about" class="anchor" href="#about"><span class="octicon octicon-link"></span></a>About</h1>
+</ul>
+
+<hr>
+
+<h1>
+<a id="about" class="anchor" href="#about" aria-hidden="true"><span class="octicon octicon-link"></span></a>About</h1>
 
 <p>Nodel is a joint venture established between Museum Victoria and Lumicom. It was imagined as a replacement for Museum Victoria’s gallery control system at the time.</p>
 
@@ -113,7 +137,10 @@
 
 <p>You may find out more about the Nodel project on the <a href="https://raw.githubusercontent.com/museumvictoria/nodel/gh-pages/docs/White_Paper-Nodel.pdf">White Paper</a>.</p>
 
-<hr><p><img src="https://raw.githubusercontent.com/museumvictoria/nodel/gh-pages/images/logo-museumvictoria-small.jpg" alt="Museum Victoria"><img src="https://raw.githubusercontent.com/museumvictoria/nodel/gh-pages/images/logo-lumicom-small.png" alt="Lumicom"></p>
+<hr>
+
+<p><img src="https://raw.githubusercontent.com/museumvictoria/nodel/gh-pages/images/logo-museumvictoria-small.jpg" alt="Museum Victoria">
+<img src="https://raw.githubusercontent.com/museumvictoria/nodel/gh-pages/images/logo-lumicom-small.png" alt="Lumicom"></p>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/museumvictoria">museumvictoria</a></p>
