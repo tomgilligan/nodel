@@ -43,3 +43,5 @@ Credits
 
 * [Museum Victoria](http://museumvictoria.com.au)
 * [Lumicom](http://lumicom.com.au)
+
+(v2.0.x stable branch)
