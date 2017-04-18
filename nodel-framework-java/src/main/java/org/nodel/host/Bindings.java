@@ -14,34 +14,42 @@ import org.nodel.reflection.Value;
  */
 public class Bindings {
     
-    /**
-     * A default or empty version.
-     */
-    public final static Bindings Empty;
-    
-    static {
-        Empty = new Bindings();
-        Empty.local = LocalBindings.Empty;
-        Empty.remote = RemoteBindings.Empty;
-        Empty.params = ParameterBindings.Empty;
-    } // (static)
-    
     @Value(name = "desc", title = "Description", order = 0.5, desc = "The description of the node.")
     public String desc;
     
     @Value(name = "local", title = "Local", order = 1, desc = "The actions and events this node provides (local).")
-    public LocalBindings local;
+    public LocalBindings local = new LocalBindings();
     
     @Value(name = "remote", title = "Remote", order = 2, desc = "The actions and events this node requires of remote (or peer) nodes.")
-    public RemoteBindings remote;
+    public RemoteBindings remote = new RemoteBindings();
     
     @Value(name = "params", title = "Parameters", order = 3, desc = "The global parameters used within the script.", genericClassA = String.class, genericClassB = ParameterBinding.class)
-    public ParameterBindings params;
+    public ParameterBindings params = new ParameterBindings();
+    
+    public void clear() {
+        this.desc = null;
+        this.local.clear();
+        this.remote.clear();
+        this.params.clear();
+    }
+    
+    public void loadInto(Bindings source) {
+        this.desc = source.desc;
+        
+        if (source.local != null)
+            this.local.loadInfo(source.local);
+        
+        if (source.remote != null)
+            this.remote.loadInfo(source.remote);
+        
+        if (source.params != null)
+            this.params.putAll(source.params);
+    }    
     
     public String toString() {
         return Serialisation.serialise(this);
     }
 
-} // (class)
+}
 
 

@@ -6,8 +6,6 @@ package org.nodel.host;
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. 
  */
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -22,38 +20,30 @@ import org.nodel.reflection.Value;
  */
 public class LocalBindings {
     
-    /**
-     * A default or empty version.
-     */
-    public final static LocalBindings Empty;
-    
-    /**
-     * Example usage.
-     */
-    public final static LocalBindings Example;
-    
-    static {
-        Empty = new LocalBindings();
-        Empty.actions = Collections.emptyMap();
-        Empty.events = Collections.emptyMap();
-
-        Example = new LocalBindings();
-        Example.actions = new HashMap<SimpleName, Binding>();
-        Example.actions.put(new SimpleName("TurnOn"), Binding.LocalActionExample1);
-        Example.actions.put(new SimpleName("AdjustLevel"), Binding.LocalActionExample2);
-                
-        Example.events = new HashMap<SimpleName, Binding>();
-        Example.events.put(new SimpleName("Triggered"), Binding.LocalEventExample);
-    }
-    
     @Value(name = "actions", order = 1, genericClassA = SimpleName.class, genericClassB = Binding.class)
-    public Map<SimpleName, Binding> actions;
+    public Map<SimpleName, Binding> actions = new LinkedHashMap<>();
     
     @Value(name = "events", order = 2, genericClassA = SimpleName.class, genericClassB = Binding.class)
-    public Map<SimpleName, Binding> events;
+    public Map<SimpleName, Binding> events = new LinkedHashMap<>();
     
     public String toString() {
         return Serialisation.serialise(this);
+    }
+    
+    public void clear() {
+        this.actions.clear();
+        this.events.clear();
+    }
+    
+    /**
+     * (assumes 'clear' has been previously called.)
+     */
+    public void loadInfo(LocalBindings source) {
+        if (source.actions != null)
+            this.actions.putAll(source.actions);
+        
+        if (this.events != null)
+            this.events.putAll(source.events);
     }
     
     public Map<String, Object> asSchema() {

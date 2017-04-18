@@ -6,7 +6,6 @@ package org.nodel.host;
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. 
  */
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,22 +25,26 @@ import org.nodel.reflection.Value;
  */
 public class RemoteBindings {
     
-    /**
-     * The default or empty instance.
-     */
-    public final static RemoteBindings Empty;
-    
-    static {
-        Empty = new RemoteBindings();
-        Empty.actions = Collections.emptyMap();
-        Empty.events = Collections.emptyMap();
-    }
-    
     @Value(name = "actions", title = "Actions", order = 1, desc = "The remote actions required by this node.", genericClassA = SimpleName.class, genericClassB = NodelActionInfo.class)
-    public Map<SimpleName, NodelActionInfo> actions;
+    public Map<SimpleName, NodelActionInfo> actions = new LinkedHashMap<>();
 
     @Value(name = "events", title = "Events", order = 2, desc = "The remote events required by this node.", genericClassA = SimpleName.class, genericClassB = NodelEventInfo.class)
-    public Map<SimpleName, NodelEventInfo> events;
+    public Map<SimpleName, NodelEventInfo> events = new LinkedHashMap<>();
+    
+    public void clear() {
+        this.actions.clear();
+        this.events.clear();
+    }
+    
+    /**
+     * (assumes 'clear' has been previously called)
+     */
+    public void loadInfo(RemoteBindings source) {
+        if (source.actions != null)
+            this.actions.putAll(source.actions);
+        if (source.events != null)
+            this.events.putAll(source.events);
+    }
 
     public String toString() {
         return Serialisation.serialise(this);

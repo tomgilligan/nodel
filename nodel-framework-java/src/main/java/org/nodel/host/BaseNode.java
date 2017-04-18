@@ -136,7 +136,7 @@ public abstract class BaseNode implements Closeable {
     /**
      * The current bindings.
      */
-    protected Bindings _bindings = Bindings.Empty;
+    protected Bindings _bindings = new Bindings();
     
     /**
      * Holds all lines going to standard error.
@@ -932,7 +932,6 @@ public abstract class BaseNode implements Closeable {
         // set the node and event values
         remoteEvent.setNodeAndEvent(node, event);        
     }
-    
     
     /**
      * Add a remote event (by subclass)

@@ -362,37 +362,6 @@ public class PyNode extends BaseDynamicNode {
     private void init() throws IOException {
         String filePrefix = "nodeConfig";
         
-        // dump the bootstrap config schema if it hasn't already been dumped
-        Object schema = Schema.getSchemaObject(NodeConfig.class);
-        String schemaString = Serialisation.serialise(schema, 4);
-        
-        // load for the bootstrap config schema file    
-        File schemaFile = new File(_root, "_" + filePrefix + "_schema.json");
-        String schemaFileString = null;
-        if(schemaFile.exists()) {
-            schemaFileString = Stream.readFully(schemaFile);
-        }
-        
-        // only write out the schema file if it's different or never been written out
-        if(schemaFileString == null || !schemaFileString.equals(schemaString)) {
-            Stream.writeFully(schemaFile, schemaString);
-        }
-        
-        // dump the example config if it hasn't already been dumped
-        String exampleString = Serialisation.serialise(NodeConfig.Example, 4);
-        
-        // load for the bootstrap config schema file    
-        File exampleFile = new File(_root, "_" + filePrefix + "_example.json");
-        String exampleFileString = null;
-        if(exampleFile.exists()) {
-            exampleFileString = Stream.readFully(exampleFile);
-        }
-        
-        // only write out the schema file if it's different or never been written out
-        if(exampleFileString == null || !exampleFileString.equals(schemaString)) {
-            Stream.writeFully(exampleFile, exampleString);
-        }        
-        
         _configFile = new File(_root, filePrefix + ".json");
         
         // dump an *empty one* if there's nothing there
@@ -402,7 +371,7 @@ public class PyNode extends BaseDynamicNode {
         
         _scriptFile = new File(_root, "script.py");
         if (!_scriptFile.exists())
-            Stream.writeFully(_scriptFile, ExampleScript.generateExampleScript());
+            Stream.writeFully(_scriptFile, Examples.instance().py_example());
         
         s_threadPool.execute(new Runnable() {
             
@@ -584,35 +553,30 @@ public class PyNode extends BaseDynamicNode {
         _python.setOut(_outReader);
         
         // dump a new example script if necessary
-        String exampleScript = ExampleScript.generateExampleScript();
         File exampleScriptFile = new File(_root, "_script_example.py");
         String exampleStringFileStr = null;
         if (exampleScriptFile.exists())
             exampleStringFileStr = Stream.readFully(exampleScriptFile);
-        if (exampleStringFileStr == null || !exampleScript.equals(exampleStringFileStr))
-            Stream.writeFully(exampleScriptFile, exampleScript);
-        
-        // TODO: extract stream only once
+        if (exampleStringFileStr == null || !Examples.instance().py_example().equals(exampleStringFileStr))
+            Stream.writeFully(exampleScriptFile, Examples.instance().py_example());
         
         // dump a new example PySp page if necessary
-        try (InputStream exampleStream = PyNode.class.getResourceAsStream("example.pysp")) {
-            String examplePySp = Stream.readFully(exampleStream);
-            examplePySp = examplePySp.replace("$VERSION", Launch.VERSION);
-            File examplePySpFile = new File(_root, "_example.pysp");
-            String examplePySpFileStr = null;
-            if (examplePySpFile.exists())
-                examplePySpFileStr = Stream.readFully(examplePySpFile);
-            if (examplePySpFileStr == null || !examplePySp.equals(examplePySpFileStr))
-                Stream.writeFully(examplePySpFile, examplePySp);
-        }
-        
-        Bindings bindings = Bindings.Empty;
+        File examplePySpFile = new File(_root, "_example.pysp");
+        String examplePySpFileStr = null;
+        if (examplePySpFile.exists())
+            examplePySpFileStr = Stream.readFully(examplePySpFile);
+        if (examplePySpFileStr == null || !Examples.instance().pysp_example().equals(examplePySpFileStr))
+            Stream.writeFully(examplePySpFile, Examples.instance().pysp_example());
         
         try {
             if (!_scriptFile.exists())
                 throw new FileNotFoundException("No script file exists.");
             
             cleanupBindings();
+            
+            // start from scratch
+            
+            _bindings.clear();
             
             // inject "self" as '_node'
             _python.set("_node", this);
@@ -654,7 +618,7 @@ public class PyNode extends BaseDynamicNode {
             
             List<String> warnings = new ArrayList<String>();
             
-            bindings = BindingsExtractor.extract(_python, warnings);
+            Bindings bindings = BindingsExtractor.extract(_python, warnings);
 
             if (warnings.size() > 0) {
                 for (String warning : warnings) {
@@ -667,7 +631,12 @@ public class PyNode extends BaseDynamicNode {
             
             injectParamValues(config, bindings.params);
             
+            applyBindings(bindings);
+            
+            _bindings.loadInto(bindings);
+            
             _config = config;
+            
         } catch (Exception exc) {
             hasErrors = true;
             
@@ -680,10 +649,6 @@ public class PyNode extends BaseDynamicNode {
             else
                 _logger.warn("The bindings could not be applied to the Python instance.", exc);
         }
-        
-        applyBindings(bindings);
-        
-        _bindings = bindings;
         
         try {
             // log a message to the console and the program log

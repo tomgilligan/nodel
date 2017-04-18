@@ -21,26 +21,12 @@ public class RemoteBindingValues {
     
     public static final RemoteBindingValues Empty = new RemoteBindingValues();
 
-    public static final RemoteBindingValues Example = new RemoteBindingValues();; 
-    
     static {
         Empty.actions = Collections.emptyMap();
         Empty.events = Collections.emptyMap();
-        
-        Example.actions = new LinkedHashMap<SimpleName, RemoteBindingValues.ActionValue>();
-        Example.actions.put(new SimpleName("projectorOn"), ActionValue.Example);
-        Example.events = new LinkedHashMap<SimpleName, RemoteBindingValues.EventValue>();
-        Example.events.put(new SimpleName("sensorTriggered"), EventValue.Example);
     }
 
     public static class ActionValue {
-        
-        public static final ActionValue Example = new ActionValue();
-        
-        static {
-            Example.node = new SimpleName("Projector1");
-            Example.action = new SimpleName("Turn on");
-        }
         
         @Value(name = "node", title = "Node", desc = "A node name.", format = "node", order = 1)
         public SimpleName node;
@@ -55,13 +41,6 @@ public class RemoteBindingValues {
     
     public static class EventValue {
         
-        public static final EventValue Example = new EventValue();
-        
-        static {
-            Example.node = new SimpleName("Sensor1");
-            Example.event = new SimpleName("Triggered");
-        }        
-        
         @Value(name = "node", order = 1, title = "Node", desc = "A node name.", format = "node")
         public SimpleName node;
         
@@ -75,11 +54,11 @@ public class RemoteBindingValues {
 
     @Value(name = "actions", order = 1, title = "Actions", genericClassA = SimpleName.class, genericClassB = ActionValue.class,
             desc = "The actions.")
-    public Map<SimpleName, ActionValue> actions;
+    public Map<SimpleName, ActionValue> actions = new LinkedHashMap<>();
 
     @Value(name = "events", order = 2, title = "Events", genericClassA = SimpleName.class, genericClassB = EventValue.class,
             desc = "The events.")
-    public Map<SimpleName, EventValue> events;
+    public Map<SimpleName, EventValue> events = new LinkedHashMap<>();
     
     public String toString() {  
         return Serialisation.serialise(this);

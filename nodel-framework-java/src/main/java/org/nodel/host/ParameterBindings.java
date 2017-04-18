@@ -20,15 +20,6 @@ public class ParameterBindings extends HashMap<SimpleName, ParameterBinding> {
     
     private static final long serialVersionUID = 9052202331768703250L;
 
-    public static ParameterBindings Empty = new ParameterBindings();
-
-    public static ParameterBindings Example;
-
-    static {
-        Example = new ParameterBindings();
-        Example.put(new SimpleName(ParameterBinding.ExampleName), ParameterBinding.Example);
-    }
-    
     public ParameterBinding get(SimpleName key) {
         return super.get(key);
     }
@@ -62,7 +53,5 @@ public class ParameterBindings extends HashMap<SimpleName, ParameterBinding> {
     public String toString() {  
         return Serialisation.serialise(this);
     }    
-    
-//    public 
 
 } // (class)

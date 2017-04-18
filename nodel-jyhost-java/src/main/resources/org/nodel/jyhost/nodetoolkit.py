@@ -231,23 +231,29 @@ def create_remote_event(name, handler, metadata=None, suggestedNode=None, sugges
 
 # Function decorators for convenience
 # (Tag functions with '@___')
-def local_action(metadata):
+def local_action(metadataOrFunc):
   def wrap(handler):
     if handler.func_code.co_argcount == 0:
-      return nodetoolkit.createAction(handler.func_name, lambda arg: handler(), metadata)
+      return nodetoolkit.createAction(handler.func_name, lambda arg: handler(), 
+                                      metadataOrFunc if not callable(metadataOrFunc) else None)
     else:
-      return nodetoolkit.createAction(handler.func_name, handler, metadata)
+      return nodetoolkit.createAction(handler.func_name, handler, 
+                                      metadataOrFunc if not callable(metadataOrFunc) else None)
 
-  return wrap
+  return wrap(metadataOrFunc) if callable(metadataOrFunc) else wrap
 
-def remote_event(metadata, suggestedNode=None, suggestedEvent=None):
+def remote_event(metadataOrFunc, suggestedNode=None, suggestedEvent=None):
   def wrap(handler):
     if handler.func_code.co_argcount == 0:
-      return nodetoolkit.createRemoteEvent(handler.func_name, lambda arg: handler(), metadata, suggestedNode, suggestedEvent)
+      return nodetoolkit.createRemoteEvent(handler.func_name, lambda arg: handler(), 
+                                           metadataOrFunc if not callable(metadataOrFunc) else None, 
+                                           suggestedNode, suggestedEvent)
     else:
-      return nodetoolkit.createRemoteEvent(handler.func_name, handler, metadata, suggestedNode, suggestedEvent)
+      return nodetoolkit.createRemoteEvent(handler.func_name, handler, 
+                                           metadataOrFunc if not callable(metadataOrFunc) else None, 
+                                           suggestedNode, suggestedEvent)
 
-  return wrap
+  return wrap(metadataOrFunc) if callable(metadataOrFunc) else wrap
 
 
 # <!-- Look up functions
