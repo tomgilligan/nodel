@@ -138,6 +138,10 @@
         <title>QR Code</title>
         <qrcode text='https://google.com' help='Google' event='DynamicQRCode' height='128' />
       </column>
+      <column sm="2">
+        <title>Auto text scroll</title>
+        <scroll_text speed="normal">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</scroll_text>
+      </column>
     </row>
   </page>
 </pages>

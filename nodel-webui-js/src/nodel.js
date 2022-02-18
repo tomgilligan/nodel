@@ -2278,6 +2278,12 @@ var populateAuxComponents = function () {
       qrcodeInstance.makeCode(textString);
     }
   });
+
+  // auto scroll text tape
+  $('.scroll-text').each(function() {
+    var speed = $(this).data('speed'); // E.g.> 'slow', 'normal' and 'fast'
+    $(this).autoTextTape({speed: speed || 'normal'});
+  });
 };
 
 var updateLogs = function(){
@@ -2556,6 +2562,10 @@ var process_event = function(log){
             qrcodeInstance.clear();
             qrcodeInstance.makeCode(log.arg); // can not use val() with QRCode.
           }
+        } else if($(ele).hasClass('scroll-text')) {
+          $(ele).text(log.arg);
+          var pluginInstance = $(ele).data('plugin_autoTextTape')
+          pluginInstance.refresh($(ele));
         } else {
           if ($(ele).is("span, h4, p")) $(ele).text(log.arg);
           // lists

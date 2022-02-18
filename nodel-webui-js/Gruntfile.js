@@ -248,6 +248,7 @@ module.exports = function(grunt) {
           './src/polyfill.js',
           './src/spectrum/spectrum.js',
           './node_modules/davidshimjs-qrcodejs/qrcode.min.js',
+          './src/scrolltext/jquery.autoScrollTextTape.min.js',
         ],
         dest: './build/grunt/v1/js/components.js'
       }
