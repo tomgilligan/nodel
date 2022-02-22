@@ -237,41 +237,18 @@
           <xsl:value-of select="@event"/>
         </xsl:attribute>
       </xsl:if>
-      <xsl:value-of select="current()"/>
-    </p>
-  </xsl:template>
-  <!-- text -->
-  <!-- scroll text -->
-  <xsl:template match="scroll_text">
-    <p class="scroll-text">
-      <xsl:apply-templates select="icon"/>
-      <xsl:if test="@showevent">
-        <xsl:attribute name="class">
-          <xsl:text>sect</xsl:text>
-        </xsl:attribute>
-        <xsl:attribute name="data-showevent">
-          <xsl:value-of select="@showevent"/>
-        </xsl:attribute>
-        <xsl:if test="@showvalue">
-          <xsl:attribute name="data-showarg">
-            <xsl:value-of select="@showvalue"/>
-          </xsl:attribute>
-        </xsl:if>
-      </xsl:if>
-      <xsl:if test="@event">
-        <xsl:attribute name="data-event">
-          <xsl:value-of select="@event"/>
-        </xsl:attribute>
-      </xsl:if>
       <xsl:if test="@speed">
         <xsl:attribute name="data-speed">
           <xsl:value-of select="@speed"/>
         </xsl:attribute>
+        <xsl:attribute name="class">
+          <xsl:text>scroll-text</xsl:text>
+        </xsl:attribute>
       </xsl:if>
       <xsl:value-of select="current()"/>
     </p>
   </xsl:template>
-  <!-- scroll text -->
+  <!-- text -->
   <!-- button -->
   <xsl:template match="button[not(@type)]">
     <a href="#" type="button">

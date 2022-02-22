@@ -140,7 +140,7 @@
       </column>
       <column sm="2">
         <title>Auto text scroll</title>
-        <scroll_text speed="normal">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</scroll_text>
+        <text speed="normal">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</text>
       </column>
     </row>
   </page>
