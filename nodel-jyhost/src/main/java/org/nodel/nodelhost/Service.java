@@ -68,7 +68,7 @@ public class Service implements Daemon {
 
     @Override
     public void start() throws Exception {
-        System.out.println("Nodel [Jython] (v" + Launch.VERSION + ")...");
+        System.out.println("Nodel [GraalVM] (v" + Launch.VERSION + ")...");
         
         _nodelLaunch = _processArgs == null ? new Launch() : new Launch(_processArgs);
         

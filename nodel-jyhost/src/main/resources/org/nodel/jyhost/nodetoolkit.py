@@ -1,5 +1,3 @@
-from sys import nodetoolkit
-
 # This scripting toolkit is injected into the 
 # scripting environment.
 # 
@@ -18,7 +16,7 @@ def Parameter(schemaDictOrJSONorTitle = None):
     return schemaDictOrJSONorTitle;
 
 # nodetoolkit: Native toolkit (injected)
-_toolkit = nodetoolkit
+nodetoolkit = _toolkit
 
 # A general console with:
 # .log(...)    - light verbose text
@@ -243,19 +241,19 @@ def create_remote_event(name, handler, metadata=None, suggestedNode=None, sugges
 # (Tag functions with '@___')
 def local_action(metadata):
   def wrap(handler):
-    if handler.func_code.co_argcount == 0:
-      return nodetoolkit.createAction(handler.func_name, lambda arg: handler(), metadata)
+    if handler.__code__.co_argcount == 0:
+      return nodetoolkit.createAction(handler.__name__, lambda arg: handler(), metadata)
     else:
-      return nodetoolkit.createAction(handler.func_name, handler, metadata)
+      return nodetoolkit.createAction(handler.__name__, handler, metadata)
 
   return wrap
 
 def remote_event(metadata, suggestedNode=None, suggestedEvent=None):
   def wrap(handler):
-    if handler.func_code.co_argcount == 0:
-      return nodetoolkit.createRemoteEvent(handler.func_name, lambda arg: handler(), metadata, suggestedNode, suggestedEvent)
+    if handler.__code__.co_argcount == 0:
+      return nodetoolkit.createRemoteEvent(handler.__name__, lambda arg: handler(), metadata, suggestedNode, suggestedEvent)
     else:
-      return nodetoolkit.createRemoteEvent(handler.func_name, handler, metadata, suggestedNode, suggestedEvent)
+      return nodetoolkit.createRemoteEvent(handler.__name__, handler, metadata, suggestedNode, suggestedEvent)
 
   return wrap
 
@@ -337,11 +335,9 @@ def at_cleanup(f):
 
 # CONVENIENCE FUNCTIONS
 
-# a convenient constant that can be used against most objects (arrays, dicts, sets, strings, etc.)
-from org.nodel.jyhost.PyToolkit import EmptyDict as EMPTY
-
 # Returns true if a string is blank (null, empty or all simple white-space incl. tab, CR, LN)
-from org.nodel.Strings import isBlank as is_blank
+import java
+is_blank = java.type("org.nodel.Strings").isBlank
 
 # Returns false if there is at least one item within 'o', true otherwise
 def is_empty(obj):

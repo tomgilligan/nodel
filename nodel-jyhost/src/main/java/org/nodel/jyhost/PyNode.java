@@ -6,6 +6,10 @@ package org.nodel.jyhost;
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. 
  */
 
+import org.graalvm.polyglot.*;
+import org.graalvm.polyglot.proxy.*;
+import java.nio.file.Paths;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
@@ -66,15 +70,6 @@ import org.nodel.threading.CallbackQueue;
 import org.nodel.threading.TimerTask;
 import org.nodel.toolkit.Console;
 import org.nodel.toolkit.ManagedToolkit;
-import org.python.core.Py;
-import org.python.core.PyBaseCode;
-import org.python.core.PyDictionary;
-import org.python.core.PyException;
-import org.python.core.PyFunction;
-import org.python.core.PyObject;
-import org.python.core.PyString;
-import org.python.core.PySystemState;
-import org.python.util.PythonInterpreter;
 
 /**
  * Represents a Python-enabled Node.
@@ -107,7 +102,7 @@ public class PyNode extends BaseDynamicNode {
     /**
      * The current Python interpreter.
      */
-    private PythonInterpreter _python;
+    private Context _python;
     
     /**
      * This ensures 'exec' and 'main()' calls on the Jython are executed serially.
@@ -167,7 +162,7 @@ public class PyNode extends BaseDynamicNode {
     /**
      * Returns the Python interpreter related to this node.
      */
-    protected PythonInterpreter getPython() {
+    protected Context getPython() {
         return _python;
     }
     
@@ -288,25 +283,13 @@ public class PyNode extends BaseDynamicNode {
     private Script _script = new Script();
 
     /**
-     * The Python "globals"
-     * (never null, initialised every new 'python' instance)
-     */
-    private PyDictionary _globals = new PyDictionary();
-
-    /**
-     * Holds the "system state" for this interpreter.
-     * (required because of threading)
-     */
-    private PySystemState _pySystemState;
-
-    /**
      * The thread-state handler
      */
     private H0 _threadStateHandler = new Handler.H0() {
 
         @Override
         public void handle() {
-            Py.setSystemState(_pySystemState);
+            // Py.setSystemState(_pySystemState);
         }
         
     };
@@ -342,13 +325,6 @@ public class PyNode extends BaseDynamicNode {
         }
 
     };
-    
-    /**
-     * The Python "globals"
-     */
-    public PyDictionary getPyGlobals() {
-        return _globals;
-    }
     
     @Service(name = "script", title = "Script", desc = "The .py script itself and meta-data.")
     public Script getScript() {
@@ -548,19 +524,7 @@ public class PyNode extends BaseDynamicNode {
         long startTime = System.nanoTime();
         
         _logger.info("Initialising new Python interpreter...");
-        
-        PySystemState pySystemState = new PySystemState();
 
-        // set the current working directory
-        pySystemState.setCurrentWorkingDir(_root.getAbsolutePath());
-        
-        // append the Node's root directory to the path
-        pySystemState.path.append(new PyString(_root.getAbsolutePath()));
-        pySystemState.path.append(new PyString(_metaRoot.getAbsolutePath()));
-        Py.setSystemState(pySystemState);
-        
-        _globals = new PyDictionary();
-        
         ReentrantLock lock = null;
         
         try {
@@ -568,8 +532,17 @@ public class PyNode extends BaseDynamicNode {
             
             trackFunction("(instance creation)");
 
-            // _python = new PythonInterpreter(globals, pySystemState);
-            _python = PythonInterpreter.threadLocalStateInterpreter(_globals);
+            _python = Context.newBuilder("python")
+                // set the current working directory
+                .currentWorkingDirectory(Paths.get(_root.getAbsolutePath()))
+                // append the Node's root directory to the path
+                .allowExperimentalOptions(true)
+                .allowAllAccess(true)
+                .option("python.PythonPath", _root.getAbsolutePath() + ":" + _metaRoot.getAbsolutePath())
+                .option("python.EmulateJython", "true")
+                .out(_outReader)
+                .err(_errReader)
+                .build();
 
         } finally {
             untrackFunction("(instance creation)");
@@ -579,10 +552,6 @@ public class PyNode extends BaseDynamicNode {
         }
 
         _logger.info("Interpreter initialised (took {}).", DateTimes.formatPeriod(startTime)); 
-        
-        // redirect 
-        _python.setErr(_errReader);
-        _python.setOut(_outReader);
         
         // dump a new example script if necessary
         String exampleScript = ExampleScript.get();
@@ -615,7 +584,7 @@ public class PyNode extends BaseDynamicNode {
             cleanupBindings();
             
             // inject "self" as '_node'
-            _python.set("_node", this);
+            _python.getBindings("python").putMember("_node", this);
             
             // inject toolkit before script is called... 
             injectToolkit();
@@ -627,7 +596,7 @@ public class PyNode extends BaseDynamicNode {
                 trackFunction("(toolkit injection)");
                 
                 // use this import to provide a toolkit directly into the script
-                _python.exec("from nodetoolkit import *");
+                _python.eval(Source.newBuilder("python", new File(_metaRoot, "nodetoolkit.py")).build());
                 
             } finally {
                 untrackFunction("(toolkit injection)");
@@ -672,7 +641,7 @@ public class PyNode extends BaseDynamicNode {
                     trackFunction("(" + filename + " loading)");
                     
                     // execute the script file
-                    _python.execfile(pythonFile.getAbsolutePath());
+                    _python.eval(Source.newBuilder("python", pythonFile).build());
                     
                     dependenciesUsed.add(filename);
                     
@@ -707,7 +676,7 @@ public class PyNode extends BaseDynamicNode {
             _errReader.inject(exc.toString());
             
             // log cleaner Python exception trace if possible 
-            if (exc instanceof PyException)
+            if (exc instanceof PolyglotException)
                 _logger.warn("The bindings could not be applied to the Python instance. {}", exc.toString());
             else
                 _logger.warn("The bindings could not be applied to the Python instance.", exc);
@@ -744,23 +713,23 @@ public class PyNode extends BaseDynamicNode {
                     trackFunction("mains");
                     
                     // handle @before_main functions (if present)
-                    PyFunction processBeforeMainFunctions = (PyFunction) _globals.get(Py.java2py("processBeforeMainFunctions"));
-                    long beforeFnCount = processBeforeMainFunctions.__call__().asLong();
-                    
+                    org.graalvm.polyglot.Value processBeforeMainFunctions = _python.getBindings("python").getMember("processBeforeMainFunctions");
+                    long beforeFnCount = processBeforeMainFunctions.execute().asLong();
+
                     if (beforeFnCount > 0)
                         commentary.add("'@before_main' function" + (beforeFnCount == 1 ? "" : "s"));
                     
                     // call 'main' if it exists
-                    PyFunction mainFunction = (PyFunction) _python.get("main");
-                    if (mainFunction != null) {
-                        mainFunction.__call__();
+                    org.graalvm.polyglot.Value mainFunction = _python.getBindings("python").getMember("main");
+                    if (mainFunction != null && mainFunction.canExecute()) {
+                        mainFunction.execute();
 
                         commentary.add("'main'");
                     }
                     
                     // handle @after_main functions (if present)
-                    PyFunction processAfterMainFunctions = (PyFunction) _globals.get(Py.java2py("processAfterMainFunctions"));
-                    long afterFnCount = processAfterMainFunctions.__call__().asLong();
+                    org.graalvm.polyglot.Value processAfterMainFunctions = _python.getBindings("python").getMember("processAfterMainFunctions");
+                    long afterFnCount = processAfterMainFunctions.execute().asLong();
                     if (afterFnCount > 0)
                         commentary.add("'@after_main' function" + (afterFnCount == 1 ? "" : "s"));
                     
@@ -769,7 +738,7 @@ public class PyNode extends BaseDynamicNode {
                     _toolkit.enable();
                     
                     // prepare a neat message to indicate clearly the entry-points of the script
-                    int commentarySize =commentary.size(); 
+                    int commentarySize = commentary.size();
                     if (commentarySize == 0) {
                         msg = "(no 'main' to call)";
                         
@@ -818,11 +787,11 @@ public class PyNode extends BaseDynamicNode {
                 msg = null;
 
                 // ...but suppress the stack-trace if it's a Warning or UserWarning
-                if (exc instanceof PyException) {
-                    PyObject pyExc = ((PyException) exc).value;
+                if (exc instanceof PolyglotException) {
+                    org.graalvm.polyglot.Value pyExc = ((PolyglotException) exc).getGuestObject();
 
-                    if (Py.isInstance(pyExc, Py.Warning) || Py.isInstance(pyExc, Py.UserWarning))
-                        msg = "Warning: " + pyExc.__str__();
+                    // if (Py.isInstance(pyExc, Py.Warning) || Py.isInstance(pyExc, Py.UserWarning))
+                    //     msg = "Warning: " + pyExc.__str__();
                 }
 
                 if (msg == null)
@@ -845,7 +814,6 @@ public class PyNode extends BaseDynamicNode {
     private void injectToolkit() throws IOException {
         // toolkit and callback queue are cleaned up by 'cleanupInterpreter'
 
-        _pySystemState = Py.getSystemState();
         _callbackQueue = new CallbackQueue();
         _toolkit = new ManagedToolkit(this)
             .setExceptionHandler(_exceptionHandler)
@@ -885,12 +853,8 @@ public class PyNode extends BaseDynamicNode {
         }
         
         // inject the toolkit into global context
-        _python.set("_toolkit", _toolkit);
-        
-        // inject into 'sys'
-        _pySystemState.__setattr__("nodetoolkit", Py.java2py(_toolkit));
-        
-        
+        org.graalvm.polyglot.Value pythonBinding = _python.getBindings("python");
+        pythonBinding.putMember("_toolkit", _toolkit);
     }
 
     /**
@@ -906,8 +870,8 @@ public class PyNode extends BaseDynamicNode {
             _outReader.inject(message);
             
             try {
-                PyFunction processCleanupFunctions = (PyFunction) _globals.get(Py.java2py("processCleanupFunctions"));
-                long cleanupFnCount = processCleanupFunctions.__call__().asLong();
+                org.graalvm.polyglot.Value processCleanupFunctions = _python.getBindings("python").getMember("processCleanupFunctions");
+                long cleanupFnCount = processCleanupFunctions.execute().asLong();
                 
                 if (cleanupFnCount > 0) {
                     message = "('@at_cleanup' function" + (cleanupFnCount == 1 ? "" : "s") + " completed.)";
@@ -919,7 +883,7 @@ public class PyNode extends BaseDynamicNode {
                 _logger.warn("Unexpected exception during cleaning up; should be safe to ignore", exc);
             }
             
-            _python.cleanup();
+            _python.close();
             
             message = "(clean up complete)";
             _logger.info(message);
@@ -1049,32 +1013,24 @@ public class PyNode extends BaseDynamicNode {
                 _activeFunctions.put(functionKey, System.nanoTime());
             }
             
-            PySystemState systemState = _pySystemState;
-            if (systemState == null)
-                throw new IllegalStateException("Python interpreter not ready.");
-            
-            Py.setSystemState(systemState);
-            
-            PyObject pyObject = _globals.get(Py.java2py(functionName));
-            if (!(pyObject instanceof PyFunction)) {
-                _logger.warn("Python interpreter function resolution failed when it should not have. name:'{}', class:{} value:{}", 
-                        functionName, pyObject == null? null: pyObject.getClass(), pyObject);
+
+            org.graalvm.polyglot.Value pyObject = _python.getBindings("python").getMember(functionName);
+            if (pyObject == null || !pyObject.canExecute()) {
+                _logger.warn("Python interpreter function resolution failed when it should not have. name:'{}', class:{} value:{}",
+                        functionName, pyObject == null ? null : pyObject.getMetaQualifiedName(), pyObject);
                 
                 throw new IllegalStateException("Action call failure (internal server error) - '" + functionName + "'");
             }
             
-            PyFunction pyFunction = (PyFunction) pyObject;
-            PyBaseCode code = (PyBaseCode) pyFunction.func_code;
 
             // only support either 0 or 1 args
-            PyObject pyResult;
-            if (code.co_argcount == 0)
-                pyResult = pyFunction.__call__();
+            org.graalvm.polyglot.Value pyResult;
+            if (pyObject.getMember("__code__").getMember("co_argcount").as(Integer.class) == 0)
+                pyResult = pyObject.execute();
             else
-                pyResult = pyFunction.__call__(Py.java2py(arg));
-            
-            return pyResult;
+                pyResult = pyObject.execute(arg);
 
+            return pyResult;
         } catch (Exception exc) {
             String message = "Action call failed - " + exc;
             _logger.info(message);
@@ -1116,7 +1072,7 @@ public class PyNode extends BaseDynamicNode {
             addLocalEvent(nodelServerEvent);
             
             String varName = "local_event_" + eventBinding.getKey().getOriginalName();
-            _python.set(varName, nodelServerEvent);
+            _python.getBindings("python").putMember(varName, nodelServerEvent);
                         
             if (sb.length() > 0)
                 sb.append(", ");
@@ -1231,7 +1187,7 @@ public class PyNode extends BaseDynamicNode {
             nodelAction.registerActionInterest();
             
             // (Python)
-            _python.set(varName, nodelAction);
+            _python.getBindings("python").putMember(varName, nodelAction);
 
             _remoteActions.put(nodelAction.getName(), nodelAction);
             
@@ -1317,28 +1273,20 @@ public class PyNode extends BaseDynamicNode {
         }
 
         try {
-            PySystemState systemState = _pySystemState;
-            if (systemState == null)
-                throw new IllegalStateException("Python interpreter not ready.");
-            
-            Py.setSystemState(systemState);
-            
-            PyObject pyObject = _globals.get(Py.java2py(functionName));
-            if (!(pyObject instanceof PyFunction)) {
-                _logger.warn("Python interpreter function resolution failed when it should not have. name:'{}', class:{} value:{}", 
-                        functionName, pyObject == null ? null : pyObject.getClass(), pyObject);
+            org.graalvm.polyglot.Value pyObject = _python.getBindings("python").getMember(functionName);
+            if (pyObject == null || !pyObject.canExecute()) {
+                _logger.warn("Python interpreter function resolution failed when it should not have. name:'{}', class:{} value:{}",
+                        functionName, pyObject == null ? null : pyObject.getMetaQualifiedName(), pyObject);
 
                 throw new IllegalStateException("Event handling failure (internal server error) - '" + functionName + "'");
             }
 
-            PyFunction pyFunction = (PyFunction) pyObject;
-            PyBaseCode code = (PyBaseCode) pyFunction.func_code;
 
             // only support either 0 or 1 args
-            if (code.co_argcount == 0)
-                pyFunction.__call__();
+            if (pyObject.getMember("__code__").getMember("co_argcount").as(Integer.class) == 0)
+                pyObject.execute();
             else
-                pyFunction.__call__(Py.java2py(arg));
+                pyObject.execute(arg);
 
         } catch (Exception exc) {
             String message = "Remote event handling failed - " + exc;
@@ -1374,7 +1322,7 @@ public class PyNode extends BaseDynamicNode {
             
             String paramName = "param_" + name.getReducedName();
             
-            _python.set(paramName, value);
+            _python.getBindings("python").putMember(paramName, value);
             
             _parameters.put(name, new ParameterEntry(name, value));
 
@@ -1431,7 +1379,7 @@ public class PyNode extends BaseDynamicNode {
      */
     @Service(name = "eval", title = "Evaluate", desc = "Evaluates a Python expression.")
     public Object eval(@Param(name = "expr", title = "Expression", desc = "A Python expression.") final String expr, String source) throws Exception {
-        final PythonInterpreter python = _python;
+        final Context python = _python;
         
         if (python == null)
             throw new RuntimeException("The interpreter has not been initialised yet.");
@@ -1446,7 +1394,7 @@ public class PyNode extends BaseDynamicNode {
 
                 @Override
                 public Object call() throws Exception {
-                    return python.eval(expr);
+                    return python.eval("python", expr);
                 }
 
             });
@@ -1470,7 +1418,7 @@ public class PyNode extends BaseDynamicNode {
         if (code == null)
             throw new IllegalArgumentException("'code' argument cannot be missing.");
         
-        final PythonInterpreter python = _python;
+        final Context python = _python;
         
         if (python == null)
             throw new RuntimeException("The interpreter has not been initialised yet.");
@@ -1487,7 +1435,7 @@ public class PyNode extends BaseDynamicNode {
                     if (onThread != null)
                         onThread.run();
                     
-                    python.exec(code);
+                    python.eval("python", code);
 
                     return null;
                 }

@@ -6,6 +6,9 @@ package org.nodel.jyhost;
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. 
  */
 
+import org.graalvm.polyglot.*;
+import org.graalvm.polyglot.proxy.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -25,11 +28,6 @@ import org.nodel.host.ParameterBinding;
 import org.nodel.host.ParameterBindings;
 import org.nodel.host.RemoteBindings;
 import org.nodel.reflection.Serialisation;
-import org.python.core.PyDictionary;
-import org.python.core.PyFunction;
-import org.python.core.PyNone;
-import org.python.core.PyObject;
-import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +42,7 @@ public class BindingsExtractor {
      * Examines the Python interpreter, extracting all the parts that form the bindings and returns
      * any warnings.
      */
-    public static Bindings extract(PythonInterpreter python, List<String> outWarnings) {
+    public static Bindings extract(Context python, List<String> outWarnings) {
         Map<SimpleName, Binding> localActions = new LinkedHashMap<SimpleName, Binding>();
         Map<SimpleName, Binding> localEvents = new LinkedHashMap<SimpleName, Binding>();
         Map<SimpleName, Binding> remoteActions = new LinkedHashMap<SimpleName, Binding>();
@@ -54,72 +52,71 @@ public class BindingsExtractor {
         String desc = null;
         
         // get all the listed functions
-        PyObject locals = python.getLocals();
+        // PyObject locals = python.getLocals();
         
         // sort them first because Python uses HashMap which is unsorted.
         // can only do alphabetical unfortunately
         
-        List<PyObject> localsList = new ArrayList<PyObject>();
-        for(PyObject local : locals.asIterable()) {
-            localsList.add(local);
-        }
-        
-        Collections.sort(localsList, new Comparator<PyObject>() {
-            
-            @Override
-            public int compare(PyObject o1, PyObject o2) {
-                return o1.__cmp__(o2);
-            }
-            
-        });
+        // List<PyObject> localsList = new ArrayList<PyObject>();
+        // for(PyObject local : locals.asIterable()) {
+        //     localsList.add(local);
+        // }
+        // 
+        // Collections.sort(localsList, new Comparator<PyObject>() {
+        //     
+        //     @Override
+        //     public int compare(PyObject o1, PyObject o2) {
+        //         return o1.__cmp__(o2);
+        //     }
+        //     
+        // });
             
         // test each item in locals
-        for(PyObject key : localsList) {
+        for(String key : python.getBindings("python").getMemberKeys()) {
             
             // the the value of the local variable
-            PyObject value = locals.__getitem__(key);
+            org.graalvm.polyglot.Value value = python.getBindings("python").getMember(key);
             
             // look for description held in '__doc__'
-            if (key.toString().equals("__doc__")) {
-                if (!value.getType().equals(PyNone.TYPE))
-                    desc = value.toString();
+            if (key.equals("__doc__")) {
+                if (value.isString())
+                    desc = value.asString();
             }
             
             
             // test for functions
-            if (value instanceof PyFunction) {
-                PyFunction pyFunc = (PyFunction) value;
+            if (value.canExecute()) {
                 
                 // this is provided by the 'monkey patching'
-                SimpleName localActionName = testForBinding(pyFunc.__name__, "local_action_"); 
+                SimpleName localActionName = testForBinding(key, "local_action_");
                 if (localActionName != null) {
-                    localActions.put(localActionName, createBinding(localActionName, pyFunc.__doc__, outWarnings));
+                    localActions.put(localActionName, createBinding(localActionName, value.getMember("__doc__"), outWarnings));
                     continue;
                 }
                 
                 // this is provided by the 'monkey patching'
-                SimpleName remoteEventName = testForBinding(pyFunc.__name__, "remote_event_");
+                SimpleName remoteEventName = testForBinding(key, "remote_event_");
                 if (remoteEventName != null) {
-                    remoteEvents.put(remoteEventName, createBinding(remoteEventName, pyFunc.__doc__, outWarnings));
+                    remoteEvents.put(remoteEventName, createBinding(remoteEventName, value.getMember("__doc__"), outWarnings));
                     continue;
                 }
                 
             } else {
                 // use the name of the variable (key)
-                SimpleName localEventName = testForBinding(key.toString(), "local_event_");
+                SimpleName localEventName = testForBinding(key, "local_event_");
                 if (localEventName != null) {
                     localEvents.put(localEventName, createBinding(localEventName, value, outWarnings));
                     continue;
                 }
                 
                 // use the name of the variable (key)
-                SimpleName remoteActionName = testForBinding(key.toString(), "remote_action_");
+                SimpleName remoteActionName = testForBinding(key, "remote_action_");
                 if (remoteActionName != null) {
                     remoteActions.put(remoteActionName, createBinding(remoteActionName, value, outWarnings));
                     continue;
                 }
                 
-                SimpleName paramName = testForBinding(key.toString(), "param_");
+                SimpleName paramName = testForBinding(key, "param_");
                 if (paramName != null) {
                     paramValues.put(paramName, createBinding(paramName, value, outWarnings));
                     continue;
@@ -190,30 +187,30 @@ public class BindingsExtractor {
     /**
      * Creates a binding from the function definition.
      */
-    private static Binding createBinding(SimpleName bindingName, PyObject definition, List<String> outWarnings) {
+    private static Binding createBinding(SimpleName bindingName, org.graalvm.polyglot.Value definition, List<String> outWarnings) {
         Exception exc = null;
         Binding binding = null;
 
         try {
-            if (definition.getType().equals(PyDictionary.TYPE)) {
-                binding = (Binding) Serialisation.coerce(Binding.class, definition, String.class, Object.class);
+            // if (definition.getType().equals(PyDictionary.TYPE)) {
+            //     binding = (Binding) Serialisation.coerce(Binding.class, definition, String.class, Object.class);
 
-            } else {
-                String asJSONorTitle = null;
+            // } else {
+            //     String asJSONorTitle = null;
 
-                if (!definition.getType().equals(PyNone.TYPE)) {
-                    asJSONorTitle = definition.toString();
-                }
+            //     if (!definition.getType().equals(PyNone.TYPE)) {
+            //         asJSONorTitle = definition.toString();
+            //     }
 
-                if (!Strings.isNullOrEmpty(asJSONorTitle)) {
-                    if (asJSONorTitle.startsWith("{")) {
-                        binding = (Binding) Serialisation.coerceFromJSON(Binding.class, asJSONorTitle);
-                    } else {
-                        binding = new Binding();
-                        binding.title = asJSONorTitle;
-                    }
-                }
-            }
+            //     if (!Strings.isNullOrEmpty(asJSONorTitle)) {
+            //         if (asJSONorTitle.startsWith("{")) {
+            //             binding = (Binding) Serialisation.coerceFromJSON(Binding.class, asJSONorTitle);
+            //         } else {
+            //             binding = new Binding();
+            //             binding.title = asJSONorTitle;
+            //         }
+            //     }
+            // }
         } catch (Exception e) {
             exc = e;
         }

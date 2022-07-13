@@ -31,13 +31,6 @@ import org.nodel.logging.slf4j.SimpleLogger;
 import org.nodel.reflection.Objects;
 import org.nodel.reflection.Schema;
 import org.nodel.reflection.Serialisation;
-import org.python.core.Py;
-import org.python.core.PyDictionary;
-import org.python.core.PyList;
-import org.python.core.PyNone;
-import org.python.core.PyObject;
-import org.python.core.adapter.PyObjectAdapter;
-import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.impl.JDK14LoggingHandler;
@@ -137,7 +130,7 @@ public class Launch {
     public static void main(String[] args) throws IOException, JSONException, StartupException {
         Launch launch = new Launch(args);
 
-        System.out.println("Nodel [Jython] v" + VERSION + " is running.");
+        System.out.println("Nodel [GraalVM] v" + VERSION + " is running.");
         System.out.println();
         System.out.println("Press Enter to initiate a shutdown.");
         System.out.println();
@@ -262,9 +255,8 @@ public class Launch {
             Nodel.updateMessagingPort(requestedMessagingPort);
         }
         
-        initialisePython();
 
-        _logger.info("Nodel [Jython] is starting... version=" + VERSION);
+        _logger.info("Nodel [GraalVM] is starting... version=" + VERSION);
 
         // Only relative paths will be allowed
         
@@ -502,90 +494,6 @@ public class Launch {
         if (_nodelHost != null)
             _nodelHost.shutdown();
     }
-    
-    /**
-     * Configures all Python adapters.
-     * Needs to be called once before using any interpreters.
-     */
-    private static void initialisePython() {
-        PythonInterpreter.initialize(System.getProperties(), null, s_processArgs);
-        
-        // JSONObject.NULL
-        Py.getAdapter().addPostClass(new PyObjectAdapter() {
-            
-            @Override
-            public boolean canAdapt(Object o) {
-                return JSONObject.NULL.equals(o);
-            }
-            
-            @Override
-            public PyObject adapt(Object o) {
-                return PyNone.TYPE;
-            }
-            
-        });
-        
-        // JSONArray
-        Py.getAdapter().addPostClass(new PyObjectAdapter() {
-            
-            @Override
-            public boolean canAdapt(Object o) {
-                return o instanceof JSONArray;
-            }
-
-            @Override
-            public PyObject adapt(Object o) {
-                JSONArray jsonArray = (JSONArray) o;
-
-                int len = jsonArray.length();
-                
-                PyList pyList = new PyList();
-
-                for (int a = 0; a < len; a++) {
-                    try {
-                        Object obj = jsonArray.get(a);
-                        pyList.append(Py.java2py(obj));
-                    } catch (JSONException e) {
-                        // should never get here, just add 'None'
-                        pyList.append(PyNone.TYPE);
-                    }
-                } // (for)
-
-                return pyList;
-            }
-            
-        });
-        
-        // JSONDict
-        Py.getAdapter().addPostClass(new PyObjectAdapter() {
-            
-            @Override
-            public boolean canAdapt(Object o) {
-                return o instanceof JSONObject;
-            }
-            
-            @Override
-            public PyObject adapt(Object o) {
-                JSONObject jsonObject = (JSONObject) o;
-
-                PyDictionary pyDictionary = new PyDictionary();
-
-                for (String key : jsonObject.keySet()) {
-                    Object value;
-                    try {
-                        value = jsonObject.get(key);
-                    } catch (JSONException e) {
-                        // should never get here, just add 'None'
-                        value = PyNone.TYPE;
-                    }
-                    pyDictionary.put(key, Py.java2py(value));
-                } // (for)
-
-                return pyDictionary;
-            }
-            
-        });
-    } // (method)
     
     /**
      * Logging related initialisation.

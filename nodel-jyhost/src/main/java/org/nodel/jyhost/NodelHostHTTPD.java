@@ -6,6 +6,9 @@ package org.nodel.jyhost;
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. 
  */
 
+import org.graalvm.polyglot.*;
+import org.graalvm.polyglot.proxy.*;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -47,11 +50,6 @@ import org.nodel.reflection.Service;
 import org.nodel.reflection.Value;
 import org.nodel.rest.EndpointNotFoundException;
 import org.nodel.rest.REST;
-import org.python.core.Py;
-import org.python.core.PyCode;
-import org.python.core.PyException;
-import org.python.core.PyStringMap;
-import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -341,8 +339,8 @@ public class NodelHostHTTPD extends NanoHTTPD {
             } catch (UnknownServiceException exc) {
                 return prepareExceptionMessageResponse(HTTP_INTERNALERROR, exc, false);
                 
-            } catch (PyException exc) {
-                // use cleaner PyException stack trace
+            } catch (PolyglotException exc) {
+                // use cleaner PolyglotException stack trace
                 _logger.warn("Python script exception during REST operation. {}", exc.toString());
 
                 return prepareExceptionMessageResponse(HTTP_INTERNALERROR, exc, params.contains("trace"));
@@ -513,13 +511,13 @@ public class NodelHostHTTPD extends NanoHTTPD {
     /**
      * ThreadLocal is used here so can be static.
      */
-    private static ThreadLocal<PyStringMap> s_locals = new ThreadLocal<PyStringMap>() {
+    private static ThreadLocal<String> s_locals = new ThreadLocal<String>() {
         
         /**
          * Returns a string map when first used.
          */
-        protected PyStringMap initialValue() {
-            return new PyStringMap();
+        protected String initialValue() {
+            return new String();
         }
         
     };
@@ -590,10 +588,7 @@ public class NodelHostHTTPD extends NanoHTTPD {
         response.status = HTTP_OK;
         response.mimeType = "text/html";
         
-        PythonInterpreter python = node.getPython();
-        
-        // this is safe because using thread-local storage
-        PyStringMap locals = s_locals.get();
+        Context python = node.getPython();
         
         final String responseVariable = "resp";
         
@@ -659,22 +654,20 @@ public class NodelHostHTTPD extends NanoHTTPD {
             
             if (params.containsKey("_compiled"))
                 return new Response(HTTP_OK, "text/plain; charset=utf-8", script);
-            
-            locals.clear();
-            locals.__setitem__("req".intern(), Py.java2py(request));
-            locals.__setitem__(responseVariable.intern(), Py.java2py(response));
-            
-            if (exceptionHolder[0] != null) {
-                node.injectError("Ignoring PySp parse error", exceptionHolder[0]);
-            }
-            
-            python.setLocals(locals);
-            
+
+            // locals.clear();
+            // locals.__setitem__("req".intern(), Py.java2py(request));
+            // locals.__setitem__(responseVariable.intern(), Py.java2py(response));
+
+            // if (exceptionHolder[0] != null) {
+            //     node.injectError("Ignoring PySp parse error", exceptionHolder[0]);
+            // }
+
+            // python.setLocals(locals);
+
             // ('systemState' is set within 'compile'...)
-            PyCode pyCode = python.compile(script);
-            
-            Py.exec(pyCode, node.getPyGlobals(), locals);
-            
+            // Py.exec(python.compile(script), node.getPyGlobals(), locals);
+
             Response nanoResponse = new Response(response.status, response.mimeType, response.getData());
             nanoResponse.header = response.headers;
 
@@ -685,11 +678,6 @@ public class NodelHostHTTPD extends NanoHTTPD {
 
             return prepareExceptionMessageResponse(HTTP_INTERNALERROR, exc, params.contains("trace"));
             
-        } finally {
-            try {
-                python.getLocals().__delitem__(responseVariable.intern());
-            } catch (Exception ignore) {
-            }         
         }
     }
 

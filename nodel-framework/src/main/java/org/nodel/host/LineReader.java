@@ -7,14 +7,14 @@ package org.nodel.host;
  */
 
 import java.io.IOException;
-import java.io.Writer;
+import java.io.OutputStream;
 
 import org.nodel.Handler;
 
 /**
  * Converts a stream into line events.
  */
-public class LineReader extends Writer {
+public class LineReader extends OutputStream {
     
     /**
      * (instance lock)
@@ -78,6 +78,19 @@ public class LineReader extends Writer {
     }
 
     @Override
+    public void write(int b) throws IOException {
+        synchronized (_lock) {
+                if (((char) b) == '\r' || ((char) b) == '\n') {
+                    if (_buffer.length() > 0)
+                        _handler.handle(_buffer.toString());
+
+                    _buffer.setLength(0);
+                } else {
+                    _buffer.append((char) b);
+                }
+        }
+    }
+
     public void write(char[] cbuf, int off, int len) throws IOException {
         synchronized (_lock) {
             for (int a=0; a<len; a++) {
