@@ -3,6 +3,11 @@
 # 
 # It contains convenience utilities and classes.
 
+try:
+    long = long
+except NameError:
+    long = int
+
 # Represents a template for a local event
 def LocalEvent(schemaDictOrJSONorTitle = None):
     return schemaDictOrJSONorTitle;

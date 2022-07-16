@@ -788,17 +788,20 @@ public class PyNode extends BaseDynamicNode {
 
                 // ...but suppress the stack-trace if it's a Warning or UserWarning
                 if (exc instanceof PolyglotException) {
-                    org.graalvm.polyglot.Value pyExc = ((PolyglotException) exc).getGuestObject();
+                    if (msg == null)
+                        msg = "'main' completed with errors - " + exc;
+                    _logger.warn(msg);
+                    _errReader.inject(msg);
+		    ((PolyglotException) exc).printStackTrace();
 
                     // if (Py.isInstance(pyExc, Py.Warning) || Py.isInstance(pyExc, Py.UserWarning))
                     //     msg = "Warning: " + pyExc.__str__();
-                }
-
-                if (msg == null)
-                    msg = "'main' completed with errors - " + exc;
-
-                _logger.warn(msg);
-                _errReader.inject(msg);
+                } else {
+                    if (msg == null)
+                        msg = "'main' completed with errors - " + exc;
+                    _logger.warn(msg);
+                    _errReader.inject(msg);
+		}
             }
         } finally {
             _config = config;
