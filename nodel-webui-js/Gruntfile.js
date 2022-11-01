@@ -267,12 +267,11 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-concat-css');
   grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-twbs');
   grunt.loadNpmTasks('grunt-text-replace');
   grunt.loadNpmTasks('grunt-google-fonts');
   // Task definition
-  grunt.registerTask('default', ['googlefonts', 'copy:updatetheme','replace','twbs:dark','concat_css:dark','twbs:light','concat_css:light','copy:main','concat','uglify']);
-  grunt.registerTask('build', ['copy:updatetheme','replace','twbs:dark','concat_css:dark','twbs:light','concat_css:light','copy:main','concat','uglify']);
+  grunt.registerTask('default', ['googlefonts', 'copy:updatetheme','replace','concat_css:dark','concat_css:light','copy:main','concat','uglify']);
+  grunt.registerTask('build', ['copy:updatetheme','replace','concat_css:dark','concat_css:light','copy:main','concat','uglify']);
   grunt.registerTask('gfonts', ['googlefonts']);
   grunt.registerTask('deploy', ['copy:main','copy:deploy']);
 };
