@@ -1155,6 +1155,22 @@ var setEvents = function(){
     if($(this).hasClass('disabled')) {
       e.preventDefault();
     }
+
+    // remove any previous validation error highlighting
+    $('.highlight').each(function () {
+      $(this).removeClass('highlight');
+    });
+    // check if an input is required
+    $('input[required], select[required]').each(function () {
+      if (!$(this).val()) {
+        $(this).addClass('highlight').focus();
+        $(this).parents('div:hidden').each(function () {
+          $(this).slideDown('slow');
+        });
+        alert('Required value missing', 'danger');
+        e.preventDefault();
+      }
+    });
   });
   $('body').on('submit','*[data-form]', function (e) {
     e.stopPropagation(); e.preventDefault();

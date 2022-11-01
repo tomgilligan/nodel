@@ -14,3 +14,10 @@
   overflow: hidden;
 }
 
+input[type="text"].highlight, input[type="password"].highlight, input[type="range"].highlight, input[type="time"].highlight, input[type="password"].highlight,     input[type="email"].highlight, input[type="number"].highlight, input[type="date"].highlight, input[type="time"].highlight, input[type="date-time"].highlight, textarea.highlight, select.highlight {
+   border: 1px solid rgba(255,0,0,0.5);
+   color: #444444;
+   -moz-box-shadow: 0 0 3px rgba(255,0,0,0.2);
+   -webkit-box-shadow: 0 0 3px rgba(255,0,0,0.2);
+   box-shadow:  0 0 3px rgba(255,0,0,0.2);
+}

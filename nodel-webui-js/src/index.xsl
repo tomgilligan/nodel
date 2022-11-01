@@ -523,7 +523,7 @@
               <%else format == 'long'%>
                 <textarea title="<%>desc%>" class="form-control" placeholder="<%>hint%>" data-link="{:<%:~key%>:} id{:~idxid(~idx,'<%:~id%>_field_<%:~key%>')}"></textarea>
               <%else%>
-                <input title="<%>desc%>" type="text" class="form-control" placeholder="<%>hint%>" data-link="{:<%:~key%>:} id{:~idxid(~idx,'<%:~id%>_field_<%:~key%>')}"/>
+		<input <%if required%>required<%/if%> title="<%>desc%>" type="text" class="form-control" placeholder="<%>hint%>" data-link="{:<%:~key%>:} id{:~idxid(~idx,'<%:~id%>_field_<%:~key%>')}"/>
               <%/if%>
             <%/if%>
           </div>
