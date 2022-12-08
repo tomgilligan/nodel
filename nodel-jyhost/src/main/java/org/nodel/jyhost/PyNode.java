@@ -71,7 +71,6 @@ import org.python.core.PyBaseCode;
 import org.python.core.PyDictionary;
 import org.python.core.PyException;
 import org.python.core.PyFunction;
-import org.python.core.PyInteger;
 import org.python.core.PyObject;
 import org.python.core.PyString;
 import org.python.core.PySystemState;
@@ -628,13 +627,7 @@ public class PyNode extends BaseDynamicNode {
                 trackFunction("(toolkit injection)");
 
                 // use this import to provide a toolkit directly into the script
-                if (((PyInteger) _python.eval("'nodetoolkit' in dir(__import__('sys'))")).asInt() > 0) {
-                        // Jython 2.7 exposes system state through sys
-                        _python.exec("from sys.nodetoolkit import *");
-                } else {
-                        // Jython 2.5 exposes system state at top-level
-                        _python.exec("from nodetoolkit import *");
-                }
+                _python.exec("from nodetoolkit import *");
 
             } finally {
                 untrackFunction("(toolkit injection)");
@@ -1080,13 +1073,7 @@ public class PyNode extends BaseDynamicNode {
             PyFunction pyFunction = (PyFunction) pyObject;
             PyBaseCode code = null;
             Class<?> objectClass = pyFunction.getClass();
-            try {
-                // Jython 2.5
-                code = (PyBaseCode) objectClass.getField("func_code").get(pyFunction);
-            } catch (NoSuchFieldException e) {
-                // Jython 2.7
-                code = (PyBaseCode) objectClass.getField("__code__").get(pyFunction);
-            }
+            code = (PyBaseCode) objectClass.getField("__code__").get(pyFunction);
 
             // only support either 0 or 1 args
             PyObject pyResult;
@@ -1356,13 +1343,7 @@ public class PyNode extends BaseDynamicNode {
             PyFunction pyFunction = (PyFunction) pyObject;
             PyBaseCode code = null;
             Class<?> objectClass = pyFunction.getClass();
-            try {
-                // Jython 2.5
-                code = (PyBaseCode) objectClass.getField("func_code").get(pyFunction);
-            } catch (NoSuchFieldException e) {
-                // Jython 2.7
-                code = (PyBaseCode) objectClass.getField("__code__").get(pyFunction);
-            }
+            code = (PyBaseCode) objectClass.getField("__code__").get(pyFunction);
 
             // only support either 0 or 1 args
             if (code.co_argcount == 0)
