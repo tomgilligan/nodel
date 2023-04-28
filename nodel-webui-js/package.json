@@ -14,7 +14,7 @@
     "google-charts": "^2.0.0",
     "gsap": "^3.8.0",
     "identicon.js": "^2.3.3",
-    "jquery": "3.4.1",
+    "jquery": "3.5.0",
     "jquery.scrollbar": "^0.2.11",
     "jsviews": "^1.0.3",
     "moment": "^2.29.2",
